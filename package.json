@@ -5,6 +5,7 @@
   "type": "module",
   "license": "ISC",
   "scripts": {
+    "start": "webpack --mode development --watch",
     "build": "webpack --mode production",
     "build-dev": "webpack --mode development",
     "format": "prettier --write .",
