@@ -14,10 +14,6 @@ export default {
       {
         test: /\.ts$/,
         use: "ts-loader",
-        include: [
-          path.resolve(__dirname, "lib"),
-          path.resolve(__dirname, "common"),
-        ],
       },
       {
         test: /\.s?css$/,

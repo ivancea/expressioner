@@ -10,6 +10,7 @@
     "strictNullChecks": true,
     "noUncheckedIndexedAccess": true,
     "noImplicitAny": true,
+    "noImplicitOverride": true,
     "skipLibCheck": true
   }
 }

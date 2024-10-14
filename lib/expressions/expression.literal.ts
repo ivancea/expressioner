@@ -1,10 +1,4 @@
-import {
-  EvaluationContext,
-  EvaluationResult,
-  Expression,
-  ExpressionFactory,
-} from "./expression";
-import { priorities } from "./priorities";
+import { Expression, ExpressionFactory } from "./expression";
 
 /**
  * An expression that represents a literal number.
@@ -17,17 +11,5 @@ export class LiteralExpression extends Expression {
     public readonly value: number,
   ) {
     super(expressionFactory, []);
-  }
-
-  get priority(): number {
-    return priorities.literal;
-  }
-
-  evaluate(context: EvaluationContext): EvaluationResult {
-    return EvaluationResult.forExpression(this);
-  }
-
-  toText(): string {
-    return this.value.toString();
   }
 }
