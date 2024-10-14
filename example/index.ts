@@ -43,16 +43,40 @@ function main() {
               .literal(8)
               .add(expressioner.literal(10).subtract(expressioner.literal(9))),
           ),
+      ) +
+      renderExpression(
+        expressioner
+          .literal(3)
+          .multiply(expressioner.variable("x"))
+          .subtract(expressioner.variable("y")),
+        { x: 5, y: 15 },
       );
   } catch (error) {
     document.body.innerHTML = `<h1>Error</h1><pre>${String(error)}</pre>`;
   }
 }
 
-function renderExpression(expression: Expression) {
+function renderExpression(
+  expression: Expression,
+  variables: Record<string, number> = {},
+) {
   return `
     <h1>Expression</h1>
-    <pre>${expressioner.toText(expression)} = ${expressioner.toNumber(expression)}</pre>
+    <pre>${expressioner.toText(expression)} = ${expressioner.toNumber(expression, variables)}</pre>
+    ${renderVariables(variables)}
+  `;
+}
+
+function renderVariables(variables: Record<string, number>) {
+  if (Object.keys(variables).length === 0) {
+    return "";
+  }
+
+  return `
+    <h4>For:</h4>
+    <pre>${Object.keys(variables)
+      .map((name) => `${name} = ${variables[name]}`)
+      .join("\n")}</pre>
   `;
 }
 

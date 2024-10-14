@@ -1,9 +1,10 @@
-import { Expression } from "../expressions/expression";
+import { Expression, ExpressionFactory } from "../expressions/expression";
 import { AddExpression } from "../expressions/expression.add";
 import { DivideExpression } from "../expressions/expression.divide";
 import { LiteralExpression } from "../expressions/expression.literal";
 import { MultiplyExpression } from "../expressions/expression.multiply";
 import { SubtractExpression } from "../expressions/expression.subtract";
+import { VariableExpression } from "../expressions/expression.variable";
 
 /**
  * Base class for all evaluators.
@@ -14,6 +15,8 @@ import { SubtractExpression } from "../expressions/expression.subtract";
  * Implementers should override the methods for the specific expressions they want to support.
  */
 export abstract class Evaluator<ContextType, ReturnType> {
+  constructor(protected readonly expressionFactory: ExpressionFactory) {}
+
   /**
    * Main entry point for evaluating an expression with the evaluator.
    *
@@ -22,6 +25,10 @@ export abstract class Evaluator<ContextType, ReturnType> {
   public evaluate(expression: Expression, context: ContextType): ReturnType {
     if (expression instanceof LiteralExpression) {
       return this.evaluateLiteral(expression, context);
+    }
+
+    if (expression instanceof VariableExpression) {
+      return this.evaluateVariable(expression, context);
     }
 
     if (expression instanceof AddExpression) {
@@ -49,6 +56,13 @@ export abstract class Evaluator<ContextType, ReturnType> {
 
   protected evaluateLiteral(
     expression: LiteralExpression,
+    context: ContextType,
+  ): ReturnType {
+    throw new Error("Not implemented");
+  }
+
+  protected evaluateVariable(
+    expression: VariableExpression,
     context: ContextType,
   ): ReturnType {
     throw new Error("Not implemented");

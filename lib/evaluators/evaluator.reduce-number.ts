@@ -1,3 +1,4 @@
+import { isNil } from "lodash-es";
 import { Expression } from "../expressions/expression";
 import { AddExpression } from "../expressions/expression.add";
 import { DivideExpression } from "../expressions/expression.divide";
@@ -5,63 +6,90 @@ import { LiteralExpression } from "../expressions/expression.literal";
 import { MultiplyExpression } from "../expressions/expression.multiply";
 import { OperatorExpression } from "../expressions/expression.operator";
 import { SubtractExpression } from "../expressions/expression.subtract";
+import { VariableExpression } from "../expressions/expression.variable";
 import { Evaluator } from "./evaluator";
 
 export class ReduceNumberEvaluator extends Evaluator<
-  undefined,
-  EvaluationResult
+  ReduceNumberContext,
+  ReduceNumberResult
 > {
   protected override evaluateLiteral(
     expression: LiteralExpression,
-  ): EvaluationResult {
-    return EvaluationResult.forExpression(expression);
+  ): ReduceNumberResult {
+    return ReduceNumberResult.forExpression(expression);
   }
 
-  protected override evaluateAdd(expression: AddExpression): EvaluationResult {
+  protected override evaluateVariable(
+    expression: VariableExpression,
+    context: ReduceNumberContext,
+  ): ReduceNumberResult {
+    const value = context.variables[expression.name];
+
+    if (isNil(value)) {
+      return ReduceNumberResult.forExpression(expression);
+    }
+
+    return ReduceNumberResult.forExpression(
+      this.expressionFactory.literal(value),
+    );
+  }
+
+  protected override evaluateAdd(
+    expression: AddExpression,
+    context: ReduceNumberContext,
+  ): ReduceNumberResult {
     return this.evaluateOperator(
       expression,
+      context,
       (left, right) => left + right,
-      (left, right) => expression.expressionFactory.add(left, right),
+      (left, right) => this.expressionFactory.add(left, right),
     );
   }
 
   protected override evaluateSubtract(
     expression: SubtractExpression,
-  ): EvaluationResult {
+    context: ReduceNumberContext,
+  ): ReduceNumberResult {
     return this.evaluateOperator(
       expression,
+      context,
       (left, right) => left - right,
-      (left, right) => expression.expressionFactory.subtract(left, right),
+      (left, right) => this.expressionFactory.subtract(left, right),
     );
   }
 
   protected override evaluateMultiply(
     expression: MultiplyExpression,
-  ): EvaluationResult {
+    context: ReduceNumberContext,
+  ): ReduceNumberResult {
     return this.evaluateOperator(
       expression,
+      context,
       (left, right) => left * right,
-      (left, right) => expression.expressionFactory.multiply(left, right),
+      (left, right) => this.expressionFactory.multiply(left, right),
     );
   }
 
   protected override evaluateDivide(
     expression: DivideExpression,
-  ): EvaluationResult {
+    context: ReduceNumberContext,
+  ): ReduceNumberResult {
     return this.evaluateOperator(
       expression,
+      context,
       (left, right) => left / right,
-      (left, right) => expression.expressionFactory.divide(left, right),
+      (left, right) => this.expressionFactory.divide(left, right),
     );
   }
 
   private evaluateOperator(
     expression: OperatorExpression,
+    context: ReduceNumberContext,
     accumulate: (valueA: number, valueB: number) => number,
     rebuild: (expressionA: Expression, expressionB: Expression) => Expression,
-  ): EvaluationResult {
-    const left = this.evaluate(expression.left, undefined);
-    const right = this.evaluate(expression.right, undefined);
+  ): ReduceNumberResult {
+    const left = this.evaluate(expression.left, context);
+    const right = this.evaluate(expression.right, context);
 
     if (left.isError) {
       return left;
@@ -75,8 +103,8 @@ export class ReduceNumberEvaluator extends Evaluator<
       left.expression instanceof LiteralExpression &&
       right.expression instanceof LiteralExpression
     ) {
-      return EvaluationResult.forExpression(
-        expression.expressionFactory.literal(
+      return ReduceNumberResult.forExpression(
+        this.expressionFactory.literal(
           accumulate(left.expression.value, right.expression.value),
         ),
       );
@@ -86,21 +114,25 @@ export class ReduceNumberEvaluator extends Evaluator<
       left.expression !== expression.left ||
       right.expression !== expression.right
     ) {
-      return EvaluationResult.forExpression(
+      return ReduceNumberResult.forExpression(
         rebuild(left.expression, right.expression),
       );
     }
 
-    return EvaluationResult.forExpression(expression);
+    return ReduceNumberResult.forExpression(expression);
   }
 }
 
-export class EvaluationResult {
-  static forExpression(expression: Expression): EvaluationResult {
-    return new EvaluationResult(expression);
+export class ReduceNumberContext {
+  constructor(public readonly variables: Record<string, number> = {}) {}
+}
+
+export class ReduceNumberResult {
+  static forExpression(expression: Expression): ReduceNumberResult {
+    return new ReduceNumberResult(expression);
   }
-  static forError(error: Error): EvaluationResult {
-    return new EvaluationResult(undefined, error);
+  static forError(error: Error): ReduceNumberResult {
+    return new ReduceNumberResult(undefined, error);
   }
 
   private constructor(

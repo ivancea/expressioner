@@ -42,5 +42,8 @@
     "val-loader": "^6.0.0",
     "webpack": "^5.92.1",
     "webpack-cli": "^5.1.4"
+  },
+  "dependencies": {
+    "lodash-es": "^4.17.21"
   }
 }

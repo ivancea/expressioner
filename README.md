@@ -1,43 +1,38 @@
-# Equations resolver and drawer
+# Expressioner
 
-Expression:
+Library to create and evaluate expressions in dynamic ways:
 
-- draw(DrawContext): DrawResult
-- evaluate(EvaluationContext): EvaluationResult
+- Get the result from an expression given the values for its variables
+- Convert it to text
+- Render it in a canvas
+- Make your own `Evaluator` to work with the expression
 
-DrawContext:
+## Structure
 
-- target: DrawTarget
-- currentOrigin: x,y
-- currentFontSize
-- variables: [Variable]?
+Expressioner is made of 2 main modules:
 
-DrawTarget:
-// Object representing the Canvas, SVG, or whatever technology used for drawing.
-// Could also be a Latex string, for example, and the DrawResult would maybe depend on this
+### Expressions (AST)
 
-DrawResult:
+The expressions AST is the core of the library, and will help you represent any kind of expression you need.
 
-- boundingBox: x1,y1,x2,y2
+They have no logic, it's just a structure.
 
-EvaluationContext:
+### Evaluators
 
-- variables: [Variable]?
+Evaluators are visitors at its core, and each of them will evaluate the expression in a different way.
 
-EvaluationResult:
+You can build your own, but there are some built-ins:
 
-- value: number? //
-- error: Error? // División by 0, or other kind of errors
-- reducedExpression: Expression? // If there are unresolved variables, a new expression is created
+#### `TextEvaluator`
 
-Variable:
+Converts an expression to a string.
 
-- name
-- value
-- color: Color? // Optional, for drawing
+#### `ReduceNumberEvaluator`
 
-## TO-DO
+Resolves an expression to a number.
+In case the expression cannot be resolved (There may be variables without value), an optimized AST will be returned.
 
-- Move logic to Evaluators.
-- Subclass add, multiply, and other operators with OperatorExpression. Only they should have the priority logic.
-- ExpressionFactory -> Remove from expressions, move to evaluators as a param
+## How to use
+
+There's an example in the `example` folder you can build with `npm start`.
+No server is started, so you'll have to open the `build/index.html` file in your browser.

@@ -5,11 +5,15 @@ import { LiteralExpression } from "../expressions/expression.literal";
 import { MultiplyExpression } from "../expressions/expression.multiply";
 import { OperatorExpression } from "../expressions/expression.operator";
 import { SubtractExpression } from "../expressions/expression.subtract";
+import { VariableExpression } from "../expressions/expression.variable";
 import { Evaluator } from "./evaluator";
 
 export class TextEvaluator extends Evaluator<undefined, string> {
   protected override evaluateLiteral(expression: LiteralExpression): string {
     return expression.value.toString();
+  }
+  protected override evaluateVariable(expression: VariableExpression): string {
+    return expression.name;
   }
 
   protected override evaluateAdd(expression: AddExpression): string {

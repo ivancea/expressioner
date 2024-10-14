@@ -32,6 +32,7 @@ export abstract class Expression {
 
 export type ExpressionFactory = {
   literal(value: number): Expression;
+  variable(name: string): Expression;
   add(...expressions: Expression[]): Expression;
   subtract(left: Expression, right: Expression): Expression;
   multiply(...expressions: Expression[]): Expression;
