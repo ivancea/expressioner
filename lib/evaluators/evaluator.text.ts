@@ -60,13 +60,20 @@ export class TextEvaluator extends Evaluator<undefined, string> {
     }
 
     if (
+      // Cases like a * b + c
       parent instanceof OperatorExpression &&
-      child instanceof OperatorExpression &&
-      child.children.length > 1 &&
-      (parent.priority > child.priority ||
-        (parent.priority == child.priority &&
-          index > 0 &&
-          (parent.constructor != child.constructor || !parent.associative)))
+      ((child instanceof OperatorExpression &&
+        // Either a * (b + c)
+        (parent.priority > child.priority ||
+          // Or a * b / c
+          (parent.priority == child.priority &&
+            // The first operand won't need parentheses, like a + b / c. Left-to-right order is correct
+            index > 0 &&
+            // If both are the same associative operation, they won't need parentheses: a * b * c
+            (parent.constructor != child.constructor ||
+              !parent.associative)))) ||
+        // Negative values as the second operand will need parentheses: a + (-b)
+        (child instanceof LiteralExpression && child.value < 0 && index > 0))
     ) {
       return `(${childText})`;
     }

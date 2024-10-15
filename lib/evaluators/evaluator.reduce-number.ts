@@ -1,5 +1,5 @@
 import { isNil } from "lodash-es";
-import { Expression } from "../expressions/expression";
+import { Expression, ExpressionFactory } from "../expressions/expression";
 import { AddExpression } from "../expressions/expression.add";
 import { DivideExpression } from "../expressions/expression.divide";
 import { LiteralExpression } from "../expressions/expression.literal";
@@ -13,6 +13,10 @@ export class ReduceNumberEvaluator extends Evaluator<
   ReduceNumberContext,
   ReduceNumberResult
 > {
+  constructor(protected readonly expressionFactory: ExpressionFactory) {
+    super();
+  }
+
   protected override evaluateLiteral(
     expression: LiteralExpression,
   ): ReduceNumberResult {

@@ -1,4 +1,4 @@
-import { Expression, ExpressionFactory } from "../expressions/expression";
+import { Expression } from "../expressions/expression";
 import { AddExpression } from "../expressions/expression.add";
 import { DivideExpression } from "../expressions/expression.divide";
 import { LiteralExpression } from "../expressions/expression.literal";
@@ -15,8 +15,6 @@ import { VariableExpression } from "../expressions/expression.variable";
  * Implementers should override the methods for the specific expressions they want to support.
  */
 export abstract class Evaluator<ContextType, ReturnType> {
-  constructor(protected readonly expressionFactory: ExpressionFactory) {}
-
   /**
    * Main entry point for evaluating an expression with the evaluator.
    *

@@ -56,6 +56,6 @@ export const expressioner = {
   },
 
   toText(expression: Expression): string {
-    return new TextEvaluator(expressionFactory).evaluate(expression, undefined);
+    return new TextEvaluator().evaluate(expression, undefined);
   },
 };
