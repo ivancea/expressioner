@@ -12,6 +12,7 @@ export class TextEvaluator extends Evaluator<undefined, string> {
   protected override evaluateLiteral(expression: LiteralExpression): string {
     return expression.value.toString();
   }
+
   protected override evaluateVariable(expression: VariableExpression): string {
     return expression.name;
   }
