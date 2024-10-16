@@ -6,13 +6,13 @@ import {
   ReduceNumberEvaluator,
 } from "./evaluator.reduce-number";
 
+const a = expressioner.literal(5);
+const b = expressioner.literal(-10);
+const x = expressioner.variable("x");
+
+const variables = { x: 100 };
+
 describe("single expressions", () => {
-  const a = expressioner.literal(5);
-  const b = expressioner.literal(-10);
-  const x = expressioner.variable("x");
-
-  const variables = { x: 100 };
-
   test("fully resolved", () => {
     expectResultOf(a).toResolveToValue(5);
     expectResultOf(b).toResolveToValue(-10);
