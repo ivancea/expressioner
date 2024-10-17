@@ -2,7 +2,7 @@ import { expressioner } from "..";
 import { Expression } from "../expressions/expression";
 import { TextEvaluator } from "./evaluator.text";
 
-test("single expressions", () => {
+it("should be correct with a single expressions", () => {
   const a = expressioner.literal(5);
   const b = expressioner.literal(-7);
   const x = expressioner.variable("x");

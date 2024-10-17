@@ -13,7 +13,7 @@ const x = expressioner.variable("x");
 const variables = { x: 100 };
 
 describe("single expressions", () => {
-  test("fully resolved", () => {
+  it("should be fully resolved", () => {
     expectResultOf(a).toResolveToValue(5);
     expectResultOf(b).toResolveToValue(-10);
     expectResultOf(x, variables).toResolveToValue(100);
@@ -39,7 +39,7 @@ describe("single expressions", () => {
     expectResultOf(expressioner.divide(a, x), variables).toResolveToValue(0.05);
   });
 
-  test("unresolved", () => {
+  it("should be unresolved", () => {
     expectResultOf(x).toResolveTo(expressioner.variable("x"));
     expectResultOf(expressioner.add(a, x)).toResolveTo(expressioner.add(a, x));
     expectResultOf(expressioner.subtract(a, x)).toResolveTo(
