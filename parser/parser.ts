@@ -31,8 +31,9 @@ export function parse<RuleReturnType>(
             return state[currentStateIndex++]?.value as string;
           }
 
-          regex.lastIndex = currentInputIndex();
-          const match = regex.exec(input);
+          const fixedRegex = new RegExp(`${regex.source}`, "y");
+          fixedRegex.lastIndex = currentInputIndex();
+          const match = fixedRegex.exec(input);
 
           if (!match) {
             throw new MatcherError(
@@ -45,7 +46,7 @@ export function parse<RuleReturnType>(
           state.push({
             type: "value",
             initialInputIndex: currentInputIndex(),
-            lastInputIndex: regex.lastIndex,
+            lastInputIndex: currentInputIndex() + value.length,
             value,
           });
           currentStateIndex++;
