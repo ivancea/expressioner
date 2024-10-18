@@ -1,6 +1,66 @@
+import {
+  classRule,
+  EXAMPLE_CLASS_INPUT,
+  EXAMPLE_PROPERTY_INPUT,
+  EXAMPLE_UNIT_INPUT,
+  propertyRule,
+  unitRule,
+} from "./example";
 import { parse, Parser, Rule } from "./parser";
 
 describe("Parser", () => {
+  describe("example parser", () => {
+    it("should parse a property", () => {
+      const result = parse(propertyRule, EXAMPLE_PROPERTY_INPUT);
+
+      expect(result).toEqual({
+        isError: false,
+        lastInputIndex: EXAMPLE_PROPERTY_INPUT.length,
+        value: { astType: "property", name: "x", type: "number" },
+      });
+    });
+
+    it("should parse a class", () => {
+      const result = parse(classRule, EXAMPLE_CLASS_INPUT);
+
+      expect(result).toEqual({
+        isError: false,
+        lastInputIndex: EXAMPLE_CLASS_INPUT.length,
+        value: {
+          astType: "class",
+          name: "A",
+          properties: [
+            { astType: "property", name: "x", type: "number" },
+            { astType: "property", name: "y", type: "string" },
+          ],
+        },
+      });
+    });
+
+    it("should parse a unit", () => {
+      const result = parse(unitRule, EXAMPLE_UNIT_INPUT);
+
+      expect(result).toEqual({
+        isError: false,
+        lastInputIndex: EXAMPLE_UNIT_INPUT.length,
+        value: {
+          astType: "unit",
+          classes: [
+            {
+              astType: "class",
+              name: "A",
+              properties: [
+                { astType: "property", name: "x", type: "number" },
+                { astType: "property", name: "y", type: "string" },
+              ],
+            },
+            { astType: "class", name: "B", properties: [] },
+          ],
+        },
+      });
+    });
+  });
+
   describe("string", () => {
     it("should match a string", () => {
       expect(parseExpectValue((parser) => parser.string("x"), "x")).toBe("x");
@@ -241,6 +301,21 @@ describe("Parser", () => {
           );
         }, "xy"),
       ).toBe("xy");
+    });
+
+    it("should fail if none of the rules match", () => {
+      expect(
+        parseExpectError((parser) => {
+          parser.any(
+            (p) => p.string("x"),
+            (p) => p.string("y"),
+          );
+          parser.any(
+            (p) => p.string("x"),
+            (p) => p.string("y"),
+          );
+        }, "yz"),
+      ).toBe(`Expected any of the rules at index 0`);
     });
   });
 });
