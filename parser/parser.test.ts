@@ -1,14 +1,14 @@
-import { parse, ParserError } from "./parser";
+import { parse, Parser, Rule } from "./parser";
 
 describe("Parser", () => {
   describe("string", () => {
     it("should match a string", () => {
-      expect(parse((parser) => parser.string("x"), "x")).toBe("x");
+      expect(parseExpectValue((parser) => parser.string("x"), "x")).toBe("x");
     });
 
     it("should match multiple contiguous strings", () => {
       expect(
-        parse((parser) => {
+        parseExpectValue((parser) => {
           return [
             parser.string("x"),
             parser.string("y"),
@@ -20,7 +20,7 @@ describe("Parser", () => {
 
     it("should match multiple separated strings", () => {
       expect(
-        parse((parser) => {
+        parseExpectValue((parser) => {
           const values: string[] = [];
 
           values.push(parser.string("x"));
@@ -34,34 +34,34 @@ describe("Parser", () => {
     });
 
     it("should throw if it doesn't match on first matcher", () => {
-      expect(() => {
-        parse((parser) => {
+      expect(
+        parseExpectError((parser) => {
           return parser.string("x");
-        }, "a");
-      }).toThrow(new ParserError(`Expected "x" at index 0`));
+        }, "a"),
+      ).toBe(`Expected "x" at index 0`);
     });
 
     it("shouldn't throw if it doesn't match after multiple matchers", () => {
-      expect(() => {
-        parse((parser) => {
+      expect(
+        parseExpectError((parser) => {
           parser.string("a");
           parser.string("b");
           parser.string("c");
           parser.string("d");
           parser.string("e");
-        }, "abcd-");
-      }).toThrow(new ParserError(`Expected "e" at index 4`));
+        }, "abcd-"),
+      ).toBe(`Expected "e" at index 4`);
     });
   });
 
   describe("regex", () => {
     it("should match a string", () => {
-      expect(parse((parser) => parser.regex(/x/), "x")).toBe("x");
+      expect(parseExpectValue((parser) => parser.regex(/x/), "x")).toBe("x");
     });
 
     it("should match multiple contiguous strings", () => {
       expect(
-        parse((parser) => {
+        parseExpectValue((parser) => {
           return [parser.regex(/x/), parser.regex(/y/), parser.regex(/z/)].join(
             "",
           );
@@ -71,7 +71,7 @@ describe("Parser", () => {
 
     it("should match multiple wildcarded regexes", () => {
       expect(
-        parse((parser) => {
+        parseExpectValue((parser) => {
           const values: string[] = [];
 
           values.push(parser.regex(/x+/));
@@ -85,27 +85,109 @@ describe("Parser", () => {
     });
 
     it("should throw if it doesn't match on first matcher", () => {
-      expect(() => {
-        parse((parser) => {
+      expect(
+        parseExpectError((parser) => {
           return parser.regex(/x/);
-        }, "axx");
-      }).toThrow(
-        new ParserError(`Expected a string matching "/x/" at index 0`),
-      );
+        }, "axx"),
+      ).toBe(`Expected a string matching "/x/" at index 0`);
     });
 
     it("shouldn't throw if it doesn't match after multiple matchers", () => {
-      expect(() => {
-        parse((parser) => {
+      expect(
+        parseExpectError((parser) => {
           parser.regex(/a/);
           parser.regex(/b/);
           parser.regex(/c/);
           parser.regex(/d/);
           parser.regex(/e/);
-        }, "abcd-e");
-      }).toThrow(
-        new ParserError(`Expected a string matching "/e/" at index 4`),
-      );
+        }, "abcd-e"),
+      ).toBe(`Expected a string matching "/e/" at index 4`);
+    });
+  });
+
+  describe("use", () => {
+    const countingRule = <T extends string>(parser: Parser<T>, context: T) => {
+      return parser.string(context).length;
+    };
+
+    it("should match other rule and return its result", () => {
+      expect(
+        parseExpectValue((parser) => parser.use(countingRule), "xy", "xy"),
+      ).toBe(2);
+    });
+
+    it("should match other rule after another", () => {
+      expect(
+        parseExpectValue(
+          (parser) => {
+            parser.string("---");
+            return parser.use(countingRule);
+          },
+          "---xyz",
+          "xyz",
+        ),
+      ).toBe(3);
+    });
+
+    it("should fail with the other rule error", () => {
+      expect(
+        parseExpectError(
+          (parser) => {
+            parser.string("-");
+            return parser.use(countingRule);
+          },
+          "---xyz",
+          "xyz",
+        ),
+      ).toBe(`Expected "xyz" at index 1`);
     });
   });
 });
+
+function parseExpectValue<T>(
+  rule: Rule<T, undefined>,
+  input: string,
+  context?: undefined,
+): T;
+function parseExpectValue<T, Context>(
+  rule: Rule<T, Context>,
+  input: string,
+  context: Context,
+): T;
+function parseExpectValue<T, Context>(
+  rule: Rule<T, Context>,
+  input: string,
+  context: Context,
+): T {
+  const result = parse(rule, input, context);
+
+  if (result.isError) {
+    throw new Error("Unexpected error: " + result.error);
+  }
+
+  return result.value;
+}
+
+function parseExpectError(
+  rule: Rule<unknown, undefined>,
+  input: string,
+  context?: undefined,
+): string;
+function parseExpectError<Context>(
+  rule: Rule<unknown, Context>,
+  input: string,
+  context: Context,
+): string;
+function parseExpectError<Context>(
+  rule: Rule<unknown, Context>,
+  input: string,
+  context: Context,
+): string {
+  const result = parse(rule, input, context);
+
+  if (!result.isError) {
+    throw new Error("Unexpected value: " + String(result.value));
+  }
+
+  return result.error;
+}
