@@ -33,15 +33,15 @@ describe("Parser", () => {
       ).toBe("xyz");
     });
 
-    it("should throw if it doesn't match on first matcher", () => {
+    it("should fail if it doesn't match on first matcher", () => {
       expect(
         parseExpectError((parser) => {
-          return parser.string("x");
+          parser.string("x");
         }, "a"),
       ).toBe(`Expected "x" at index 0`);
     });
 
-    it("shouldn't throw if it doesn't match after multiple matchers", () => {
+    it("should fail if it doesn't match after multiple matchers", () => {
       expect(
         parseExpectError((parser) => {
           parser.string("a");
@@ -51,6 +51,15 @@ describe("Parser", () => {
           parser.string("e");
         }, "abcd-"),
       ).toBe(`Expected "e" at index 4`);
+    });
+
+    it("should fail if at end of input with non-empty string", () => {
+      expect(
+        parseExpectError((parser) => {
+          parser.string("a");
+          parser.string("b");
+        }, "a"),
+      ).toBe(`Expected "b" at index 1`);
     });
   });
 
@@ -84,15 +93,15 @@ describe("Parser", () => {
       ).toBe("xxxyz");
     });
 
-    it("should throw if it doesn't match on first matcher", () => {
+    it("should fail if it doesn't match on first matcher", () => {
       expect(
         parseExpectError((parser) => {
-          return parser.regex(/x/);
+          parser.regex(/x/);
         }, "axx"),
       ).toBe(`Expected a string matching "/x/" at index 0`);
     });
 
-    it("shouldn't throw if it doesn't match after multiple matchers", () => {
+    it("should fail if it doesn't match after multiple matchers", () => {
       expect(
         parseExpectError((parser) => {
           parser.regex(/a/);
@@ -102,6 +111,15 @@ describe("Parser", () => {
           parser.regex(/e/);
         }, "abcd-e"),
       ).toBe(`Expected a string matching "/e/" at index 4`);
+    });
+
+    it("should fail if at end of input with non-empty-matching regex", () => {
+      expect(
+        parseExpectError((parser) => {
+          parser.regex(/a/);
+          parser.regex(/b/);
+        }, "a"),
+      ).toBe(`Expected a string matching "/b/" at index 1`);
     });
   });
 
