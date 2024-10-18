@@ -160,6 +160,75 @@ describe("Parser", () => {
       ).toBe(`Expected "xyz" at index 1`);
     });
   });
+
+  describe("any", () => {
+    it("should match any of the given rules", () => {
+      expect(
+        parseExpectValue((parser) => {
+          return parser.any(
+            (p) => p.string("x"),
+            (p) => p.string("y"),
+          );
+        }, "x"),
+      ).toBe("x");
+      expect(
+        parseExpectValue((parser) => {
+          return parser.any(
+            (p) => p.string("x"),
+            (p) => p.string("y"),
+          );
+        }, "y"),
+      ).toBe("y");
+    });
+
+    it("should match any after other rules", () => {
+      expect(
+        parseExpectValue((parser) => {
+          return (
+            parser.string("a") +
+            parser.any(
+              (p) => p.string("x"),
+              (p) => p.string("y"),
+            )
+          );
+        }, "ax"),
+      ).toBe("ax");
+      expect(
+        parseExpectValue((parser) => {
+          return (
+            parser.string("a") +
+            parser.any(
+              (p) => p.string("x"),
+              (p) => p.string("y"),
+            )
+          );
+        }, "ay"),
+      ).toBe("ay");
+    });
+
+    it("should match any and then match other rules", () => {
+      expect(
+        parseExpectValue((parser) => {
+          return (
+            parser.any(
+              (p) => p.string("x"),
+              (p) => p.string("y"),
+            ) + parser.string("a")
+          );
+        }, "xa"),
+      ).toBe("xa");
+      expect(
+        parseExpectValue((parser) => {
+          return (
+            parser.any(
+              (p) => p.string("x"),
+              (p) => p.string("y"),
+            ) + parser.string("a")
+          );
+        }, "ya"),
+      ).toBe("ya");
+    });
+  });
 });
 
 function parseExpectValue<T>(

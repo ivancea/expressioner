@@ -4,9 +4,7 @@ export type Parser<Context = undefined> = {
   regex: (regex: RegExp) => string;
   string: <S extends string>(value: S) => S;
   use: <T>(rule: Rule<T, Context>) => T;
-  any: <Rules extends [Rule<unknown, Context>, ...Rule<unknown, Context>[]]>(
-    ...rules: Rules
-  ) => ReturnType<Rules[number]>;
+  any: <R>(...rules: [Rule<R, Context>, ...Rule<R, Context>[]]) => R;
 };
 
 export type Rule<T, Context> = (parser: Parser<Context>, context: Context) => T;
@@ -135,17 +133,51 @@ export function parse<T, Context>(
             return ruleResult.value;
           },
 
-          any: <
-            Rules extends [Rule<unknown, Context>, ...Rule<unknown, Context>[]],
-            R extends ReturnType<Rules[number]>,
-          >(
-            ...rules: Rules
-          ): R => {
-            if (state[currentStateIndex]) {
-              return state[currentStateIndex++]?.value as R;
+          any: <R>(...rules: [Rule<R, Context>, ...Rule<R, Context>[]]): R => {
+            const rawCurrentState = state[currentStateIndex];
+            const currentState =
+              rawCurrentState?.type === "any" ? rawCurrentState : undefined;
+
+            if (currentState && currentState.valid) {
+              currentStateIndex++;
+              return currentState.value as R;
             }
 
-            return undefined as R;
+            const nextRuleIndex = currentState?.lastRuleIndex ?? 0;
+
+            for (let j = nextRuleIndex; j < rules.length; j++) {
+              const rule = rules[j];
+              if (!rule) {
+                continue;
+              }
+
+              const ruleResult = parse(
+                rule,
+                input,
+                context,
+                currentInputIndex(),
+                true,
+                maxIterationsPerRule,
+              );
+
+              if (!ruleResult.isError) {
+                state.push({
+                  type: "any",
+                  initialInputIndex: currentInputIndex(),
+                  lastInputIndex: ruleResult.lastInputIndex,
+                  value: ruleResult.value,
+                  lastRuleIndex: j,
+                  valid: true,
+                });
+                currentStateIndex++;
+
+                return ruleResult.value;
+              }
+            }
+
+            throw new MatcherError(
+              `Expected any of the rules at index ${currentInputIndex()}`,
+            );
           },
         },
         context,
@@ -172,7 +204,14 @@ export function parse<T, Context>(
 
         if (stateElement?.type === "value") {
           state.pop();
+          continue;
         }
+        if (stateElement?.type === "any") {
+          stateElement.valid = false;
+          break;
+        }
+
+        throw new Error("Invalid state element type");
       }
 
       if (state.length === 0) {
@@ -211,5 +250,14 @@ type ValueStateElement = StateElementBase & {
 type AnyStateElement = StateElementBase & {
   type: "any";
 
-  lastMatchIndex: number;
+  /**
+   * The index of the last rule tested, from the any rules array.
+   */
+  lastRuleIndex: number;
+  /**
+   * Temporary value to let a rule be invalidated.
+   *
+   * If false, it will be discarded on the next iteration.
+   */
+  valid: boolean;
 };
