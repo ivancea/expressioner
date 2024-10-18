@@ -228,6 +228,20 @@ describe("Parser", () => {
         }, "ya"),
       ).toBe("ya");
     });
+
+    it("should match any and backtrack on subsequent failures", () => {
+      expect(
+        parseExpectValue((parser) => {
+          return (
+            parser.any(
+              (p) => p.string("xy"),
+              (p) => p.string("x"),
+              (p) => p.string(""),
+            ) + parser.string("y")
+          );
+        }, "xy"),
+      ).toBe("xy");
+    });
   });
 });
 
