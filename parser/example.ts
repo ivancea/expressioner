@@ -1,5 +1,5 @@
 import { isNil } from "lodash-es";
-import { Parser } from "./parser";
+import { Parser } from "./parser.types";
 
 /*
 Example language to test the parser

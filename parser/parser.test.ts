@@ -6,7 +6,8 @@ import {
   propertyRule,
   unitRule,
 } from "./example";
-import { parse, Parser, Rule } from "./parser";
+import { parse } from "./parser";
+import { Parser, Rule } from "./parser.types";
 
 describe("Parser", () => {
   describe("example parser", () => {
