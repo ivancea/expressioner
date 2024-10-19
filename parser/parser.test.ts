@@ -311,11 +311,11 @@ describe("Parser", () => {
             (p) => p.string("y"),
           );
           parser.any(
-            (p) => p.string("x"),
-            (p) => p.string("y"),
+            (p) => p.string("a"),
+            (p) => p.string("b"),
           );
         }, "yz"),
-      ).toBe(`Expected any of the rules at index 0`);
+      ).toBe(`Expected any of the rules at index 1`);
     });
   });
 });

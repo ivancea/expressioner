@@ -227,8 +227,12 @@ export function parse<T, Context>(
           continue;
         }
         if (stateElement?.type === "any") {
-          stateElement.valid = false;
-          break;
+          if (stateElement.valid) {
+            stateElement.valid = false;
+            break;
+          }
+          state.pop();
+          continue;
         }
 
         throw new Error("Invalid state element type");
