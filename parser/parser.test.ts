@@ -309,6 +309,7 @@ describe("Parser", () => {
           parser.any(
             (p) => p.string("x"),
             (p) => p.string("y"),
+            (p) => p.string("z"),
           );
           parser.any(
             (p) => p.string("a"),

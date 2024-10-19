@@ -5,12 +5,8 @@ export type Parser<Context = undefined> = {
   string: <S extends string>(value: S) => S;
   use: <T>(rule: Rule<T, Context>) => T;
   any: <R>(...rules: [Rule<R, Context>, ...Rule<R, Context>[]]) => R;
-  many: <R>(
-    rule: Rule<R, Context>,
-    min: number,
-    max: number,
-    greedy: boolean,
-  ) => R[];
+  many: <R>(rule: Rule<R, Context>, count: number) => R[];
+  manyGreedy: <R>(rule: Rule<R, Context>, max: number) => R[];
 };
 
 export type Rule<T, Context> = (parser: Parser<Context>, context: Context) => T;
@@ -57,151 +53,148 @@ export function parse<T, Context>(
       initialInputIndex;
     let currentStateIndex = 0;
 
-    try {
-      const result = rule(
-        {
-          string: <S extends string>(value: S): S => {
-            // TODO: Handle changing rule matchers
-            if (state[currentStateIndex]?.value === value) {
-              return state[currentStateIndex++]?.value as S;
-            }
+    const parser = {
+      string: <S extends string>(value: S): S => {
+        // TODO: Handle changing rule matchers
+        if (state[currentStateIndex]?.value === value) {
+          return state[currentStateIndex++]?.value as S;
+        }
 
-            if (!input.startsWith(value, currentInputIndex())) {
-              throw new MatcherError(
-                `Expected "${value}" at index ${currentInputIndex()}`,
-              );
-            }
+        if (!input.startsWith(value, currentInputIndex())) {
+          throw new MatcherError(
+            `Expected "${value}" at index ${currentInputIndex()}`,
+          );
+        }
 
+        state.push({
+          type: "value",
+          initialInputIndex: currentInputIndex(),
+          lastInputIndex: currentInputIndex() + value.length,
+          value,
+        });
+        currentStateIndex++;
+
+        return value;
+      },
+
+      regex: (regex: RegExp) => {
+        if (state[currentStateIndex]) {
+          return state[currentStateIndex++]?.value as string;
+        }
+
+        const fixedRegex = new RegExp(regex, "y");
+        fixedRegex.lastIndex = currentInputIndex();
+        const match = fixedRegex.exec(input);
+
+        if (!match) {
+          throw new MatcherError(
+            `Expected a string matching "${regex}" at index ${currentInputIndex()}`,
+          );
+        }
+
+        const value = match[0];
+
+        state.push({
+          type: "value",
+          initialInputIndex: currentInputIndex(),
+          lastInputIndex: currentInputIndex() + value.length,
+          value,
+        });
+        currentStateIndex++;
+
+        return value;
+      },
+
+      use: <T>(rule: Rule<T, Context>): T => {
+        if (state[currentStateIndex]) {
+          return state[currentStateIndex++]?.value as T;
+        }
+
+        const ruleResult = parse(
+          rule,
+          input,
+          context,
+          currentInputIndex(),
+          true,
+          maxIterationsPerRule,
+        );
+
+        if (ruleResult.isError) {
+          throw new MatcherError(ruleResult.error);
+        }
+
+        state.push({
+          type: "value",
+          initialInputIndex: currentInputIndex(),
+          lastInputIndex: ruleResult.lastInputIndex,
+          value: ruleResult.value,
+        });
+        currentStateIndex++;
+
+        return ruleResult.value;
+      },
+
+      any: <R>(...rules: [Rule<R, Context>, ...Rule<R, Context>[]]): R => {
+        const rawCurrentState = state[currentStateIndex];
+        const currentState =
+          rawCurrentState?.type === "any" ? rawCurrentState : undefined;
+
+        if (currentState && currentState.valid) {
+          currentStateIndex++;
+          return currentState.value as R;
+        }
+
+        const nextRuleIndex = currentState
+          ? currentState.currentRuleIndex + 1
+          : 0;
+
+        for (let j = nextRuleIndex; j < rules.length; j++) {
+          const rule = rules[j];
+          if (!rule) {
+            continue;
+          }
+
+          const ruleResult = parse(
+            rule,
+            input,
+            context,
+            currentInputIndex(!!currentState),
+            true,
+            maxIterationsPerRule,
+          );
+
+          if (!ruleResult.isError) {
+            if (currentState) {
+              state.pop();
+            }
             state.push({
-              type: "value",
-              initialInputIndex: currentInputIndex(),
-              lastInputIndex: currentInputIndex() + value.length,
-              value,
-            });
-            currentStateIndex++;
-
-            return value;
-          },
-
-          regex: (regex: RegExp) => {
-            if (state[currentStateIndex]) {
-              return state[currentStateIndex++]?.value as string;
-            }
-
-            const fixedRegex = new RegExp(regex, "y");
-            fixedRegex.lastIndex = currentInputIndex();
-            const match = fixedRegex.exec(input);
-
-            if (!match) {
-              throw new MatcherError(
-                `Expected a string matching "${regex}" at index ${currentInputIndex()}`,
-              );
-            }
-
-            const value = match[0];
-
-            state.push({
-              type: "value",
-              initialInputIndex: currentInputIndex(),
-              lastInputIndex: currentInputIndex() + value.length,
-              value,
-            });
-            currentStateIndex++;
-
-            return value;
-          },
-
-          use: <T>(rule: Rule<T, Context>): T => {
-            if (state[currentStateIndex]) {
-              return state[currentStateIndex++]?.value as T;
-            }
-
-            const ruleResult = parse(
-              rule,
-              input,
-              context,
-              currentInputIndex(),
-              true,
-              maxIterationsPerRule,
-            );
-
-            if (ruleResult.isError) {
-              throw new MatcherError(ruleResult.error);
-            }
-
-            state.push({
-              type: "value",
-              initialInputIndex: currentInputIndex(),
+              type: "any",
+              initialInputIndex: currentInputIndex(!!currentState),
               lastInputIndex: ruleResult.lastInputIndex,
               value: ruleResult.value,
+              currentRuleIndex: j,
+              valid: true,
             });
             currentStateIndex++;
 
             return ruleResult.value;
-          },
+          }
+        }
 
-          any: <R>(...rules: [Rule<R, Context>, ...Rule<R, Context>[]]): R => {
-            const rawCurrentState = state[currentStateIndex];
-            const currentState =
-              rawCurrentState?.type === "any" ? rawCurrentState : undefined;
+        throw new MatcherError(
+          `Expected any of the rules at index ${currentInputIndex()}`,
+        );
+      },
+      many: <R>(rule: Rule<R, Context>, count: number): R[] => {
+        return [];
+      },
+      manyGreedy: <R>(rule: Rule<R, Context>, max: number): R[] => {
+        return [];
+      },
+    };
 
-            if (currentState && currentState.valid) {
-              currentStateIndex++;
-              return currentState.value as R;
-            }
-
-            const nextRuleIndex = currentState
-              ? currentState.currentRuleIndex + 1
-              : 0;
-
-            for (let j = nextRuleIndex; j < rules.length; j++) {
-              const rule = rules[j];
-              if (!rule) {
-                continue;
-              }
-
-              const ruleResult = parse(
-                rule,
-                input,
-                context,
-                currentInputIndex(!!currentState),
-                true,
-                maxIterationsPerRule,
-              );
-
-              if (!ruleResult.isError) {
-                if (currentState) {
-                  state.pop();
-                }
-                state.push({
-                  type: "any",
-                  initialInputIndex: currentInputIndex(!!currentState),
-                  lastInputIndex: ruleResult.lastInputIndex,
-                  value: ruleResult.value,
-                  currentRuleIndex: j,
-                  valid: true,
-                });
-                currentStateIndex++;
-
-                return ruleResult.value;
-              }
-            }
-
-            throw new MatcherError(
-              `Expected any of the rules at index ${currentInputIndex()}`,
-            );
-          },
-          many: <R>(
-            rule: Rule<R, Context>,
-            min: number,
-            max: number,
-            greedy: boolean,
-          ): R[] => {
-            return [];
-          },
-        },
-        context,
-      );
+    try {
+      const result = rule(parser, context);
 
       if (!partial && currentInputIndex() < input.length) {
         throw new MatcherError(
