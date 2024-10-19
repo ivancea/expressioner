@@ -1,4 +1,3 @@
-import { isNil } from "lodash-es";
 import { Parser } from "./parser.types";
 
 /*
@@ -44,18 +43,10 @@ type PropertyAST = {
 };
 
 export function unitRule(parser: Parser): UnitAST {
-  const classes: ClassAST[] = [];
-
-  for (let i = 0; i < 10000; i++) {
+  const classes = parser.many((p) => {
     parser.regex(/\s*/);
-    const classAst = parser.any(classRule, () => undefined);
-
-    if (isNil(classAst)) {
-      break;
-    }
-
-    classes.push(classAst);
-  }
+    return parser.use(classRule);
+  });
 
   // Consume everything until EOF
   parser.regex(/\s*/);
@@ -75,18 +66,10 @@ export function classRule(parser: Parser): ClassAST {
   parser.string("{");
   parser.regex(/\s*/);
 
-  const properties: PropertyAST[] = [];
-
-  for (let i = 0; i < 1_000; i++) {
+  const properties = parser.many((p) => {
     parser.regex(/\s*/);
-    const propertyAst = parser.any(propertyRule, () => undefined);
-
-    if (isNil(propertyAst)) {
-      break;
-    }
-
-    properties.push(propertyAst);
-  }
+    return parser.use(propertyRule);
+  });
 
   parser.regex(/\s*/);
   parser.string("}");
