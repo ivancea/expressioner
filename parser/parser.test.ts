@@ -7,7 +7,8 @@ import {
   unitRule,
 } from "./example";
 import { parse } from "./parser";
-import { Parser, Rule } from "./parser.types";
+import { parseExpectError, parseExpectValue } from "./parser.test.helpers";
+import { Parser } from "./parser.types";
 
 describe("Parser", () => {
   describe("example parser", () => {
@@ -321,51 +322,3 @@ describe("Parser", () => {
     });
   });
 });
-
-function parseExpectValue<T>(
-  rule: Rule<T, undefined>,
-  input: string,
-  context?: undefined,
-): T;
-function parseExpectValue<T, Context>(
-  rule: Rule<T, Context>,
-  input: string,
-  context: Context,
-): T;
-function parseExpectValue<T, Context>(
-  rule: Rule<T, Context>,
-  input: string,
-  context: Context,
-): T {
-  const result = parse(rule, input, context);
-
-  if (result.isError) {
-    throw new Error("Unexpected error: " + result.error);
-  }
-
-  return result.value;
-}
-
-function parseExpectError(
-  rule: Rule<unknown, undefined>,
-  input: string,
-  context?: undefined,
-): string;
-function parseExpectError<Context>(
-  rule: Rule<unknown, Context>,
-  input: string,
-  context: Context,
-): string;
-function parseExpectError<Context>(
-  rule: Rule<unknown, Context>,
-  input: string,
-  context: Context,
-): string {
-  const result = parse(rule, input, context);
-
-  if (!result.isError) {
-    throw new Error("Unexpected value: " + String(result.value));
-  }
-
-  return result.error;
-}

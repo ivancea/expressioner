@@ -2,6 +2,7 @@
 
 import { MatcherError } from "./errors";
 import { makeAnyMatcher } from "./parser.any";
+import { makeManyMatcher } from "./parser.many";
 import { makeRegexMatcher } from "./parser.regex";
 import { makeStringMatcher } from "./parser.string";
 import {
@@ -12,31 +13,6 @@ import {
   StateElement,
 } from "./parser.types";
 import { makeUseMatcher } from "./parser.use";
-
-function makeParser<Context>(
-  parserState: ParserState<Context>,
-): Parser<Context> {
-  const {
-    input,
-    context,
-    maxIterationsPerRule,
-    state,
-    currentStateIndex,
-    currentInputIndex,
-  } = parserState;
-  return {
-    string: makeStringMatcher(parserState),
-    regex: makeRegexMatcher(parserState),
-    use: makeUseMatcher(parserState),
-    any: makeAnyMatcher(parserState),
-    many: <R>(rule: Rule<R, Context>, count: number): R[] => {
-      return [];
-    },
-    manyGreedy: <R>(rule: Rule<R, Context>, max: number): R[] => {
-      return [];
-    },
-  };
-}
 
 export function parse<T>(
   rule: Rule<T, undefined>,
@@ -104,7 +80,7 @@ export function parse<T, Context>(
           state.pop();
           continue;
         }
-        if (stateElement?.type === "any") {
+        if (stateElement?.type === "any" || stateElement?.type === "many") {
           if (stateElement.valid) {
             stateElement.valid = false;
             break;
@@ -128,5 +104,17 @@ export function parse<T, Context>(
   return {
     isError: true,
     error: "Max iterations reached",
+  };
+}
+
+function makeParser<Context>(
+  parserState: ParserState<Context>,
+): Parser<Context> {
+  return {
+    string: makeStringMatcher(parserState),
+    regex: makeRegexMatcher(parserState),
+    use: makeUseMatcher(parserState),
+    any: makeAnyMatcher(parserState),
+    many: makeManyMatcher(parserState),
   };
 }

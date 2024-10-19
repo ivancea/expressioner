@@ -3,8 +3,12 @@ export type Parser<Context = undefined> = {
   string: <S extends string>(value: S) => S;
   use: <T>(rule: Rule<T, Context>) => T;
   any: <R>(...rules: [Rule<R, Context>, ...Rule<R, Context>[]]) => R;
-  many: <R>(rule: Rule<R, Context>, count: number) => R[];
-  manyGreedy: <R>(rule: Rule<R, Context>, max: number) => R[];
+  many: <R>(
+    rule: Rule<R, Context>,
+    min?: number,
+    max?: number,
+    greedy?: boolean,
+  ) => R[];
 };
 
 export type Rule<T, Context> = (parser: Parser<Context>, context: Context) => T;
@@ -84,7 +88,14 @@ export type ManyStateElement = StateElementBase & {
   type: "many";
 
   matches: unknown[];
-  lastMatchIndexes: number[];
-
-  failedAttempts: number;
+  /**
+   * Similar to lastInputIndex, but for each match.
+   */
+  lastInputIndexes: number[];
+  /**
+   * Temporary value to let a rule be invalidated.
+   *
+   * If false, it will be discarded on the next iteration.
+   */
+  valid: boolean;
 };

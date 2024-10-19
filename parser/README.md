@@ -54,5 +54,7 @@ To avoid executing everything from scratch within a rule, values are memoized. T
 ## Roadmap
 
 - Better errors
+- Verify that the correct Parser is called within each parse() function.
+  For example, `parser.use(() => parser.string("A"))` is an error,
 - Memoization: Allow matchers to be changed without beaking the rule caches
 - Memoization: Possibility to disable cache at either rule or matcher level
