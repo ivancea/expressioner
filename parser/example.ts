@@ -44,8 +44,8 @@ type PropertyAST = {
 
 export function unitRule(parser: Parser): UnitAST {
   const classes = parser.many((p) => {
-    parser.regex(/\s*/);
-    return parser.use(classRule);
+    p.regex(/\s*/);
+    return p.use(classRule);
   });
 
   // Consume everything until EOF
@@ -67,8 +67,8 @@ export function classRule(parser: Parser): ClassAST {
   parser.regex(/\s*/);
 
   const properties = parser.many((p) => {
-    parser.regex(/\s*/);
-    return parser.use(propertyRule);
+    p.regex(/\s*/);
+    return p.use(propertyRule);
   });
 
   parser.regex(/\s*/);
@@ -96,13 +96,5 @@ export function propertyRule(parser: Parser): PropertyAST {
     astType: "property",
     name,
     type,
-  };
-}
-
-function otherRule(parser: Parser) {
-  const value = parser.string("abc");
-
-  return {
-    value,
   };
 }
