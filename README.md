@@ -36,3 +36,7 @@ In case the expression cannot be resolved (There may be variables without value)
 
 There's an example in the `example` folder you can build with `npm start`.
 No server is started, so you'll have to open the `build/index.html` file in your browser.
+
+## Roadmap
+
+- Add a parser for the expressions , that would generate the syntax tree. It would use https://github.com/ivancea/syntaxer
